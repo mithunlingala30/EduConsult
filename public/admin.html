@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Panel — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="dash">
+  <aside class="sidebar">
+    <div class="me"><strong>Administrator</strong><span id="meEmail"></span></div>
+    <button class="side-link active" data-v="overview">📊 Overview</button>
+    <button class="side-link" data-v="applications">📝 Applications</button>
+    <button class="side-link" data-v="consultations">📅 Consultations</button>
+    <button class="side-link" data-v="colleges">🏛️ Colleges</button>
+    <button class="side-link" data-v="students">🎓 Students</button>
+    <button class="side-link" data-v="inquiries">✉️ Inquiries</button>
+    <button class="btn btn-gold" style="width:100%;margin-top:18px" onclick="collegeForm()">+ Add new college</button>
+  </aside>
+  <main class="dash-main" id="main"><div class="loading"><span class="spinner"></span></div></main>
+</div>
+<script src="/js/app.js"></script>
+<script>
+const me = requireAuth('admin');
+const $ = id => document.getElementById(id);
+$('meEmail').textContent = me.name;
+const APP_ST = ['Submitted', 'Under Review', 'Documents Required', 'Shortlisted', 'Admitted', 'Rejected'];
+const CON_ST = ['Pending', 'Confirmed', 'Completed', 'Cancelled'];
+let current = 'overview', data = {};
+
+const views = {
+  overview() {
+    const s = data.stats, max = Math.max(1, ...s.byStatus.map(x => x.count)), maxC = Math.max(1, ...s.topColleges.map(x => x.count));
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap"><div><h2>Dashboard overview</h2><p class="dash-sub">A live snapshot of your consultancy.</p></div><button class="btn btn-gold" onclick="collegeForm()">+ Add college</button></div>
+    <div class="stats">
+      <div class="stat"><span>Students</span><strong>${s.students}</strong></div>
+      <div class="stat"><span>Colleges</span><strong>${s.colleges}</strong></div>
+      <div class="stat"><span>Applications</span><strong>${s.applications}</strong></div>
+      <div class="stat"><span>Admitted</span><strong>${s.admitted}</strong></div>
+      <div class="stat"><span>Pending sessions</span><strong>${s.pendingConsults}</strong></div>
+      <div class="stat"><span>Inquiries</span><strong>${s.inquiries}</strong></div>
+    </div>
+    <div class="grid grid-2">
+      <div class="panel"><h3>Applications by status</h3>${s.byStatus.length ? s.byStatus.map(x => `<div class="bar-row"><span>${esc(x.status)}</span><div class="bar"><i style="width:${x.count / max * 100}%"></i></div><b>${x.count}</b></div>`).join('') : '<div class="empty">No data yet.</div>'}</div>
+      <div class="panel"><h3>Most applied colleges</h3>${s.topColleges.map(x => `<div class="bar-row"><span title="${esc(x.name)}" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(x.name)}</span><div class="bar"><i style="width:${x.count / maxC * 100}%"></i></div><b>${x.count}</b></div>`).join('')}</div>
+    </div>`;
+  },
+  applications() {
+    return `<h2>Applications</h2><p class="dash-sub">Review and update the status of student applications.</p><div class="panel">
+    ${data.apps.length ? `<div class="table-wrap"><table><thead><tr><th>Student</th><th>College</th><th>Course</th><th>Applied</th><th>Status</th><th>Note</th><th></th></tr></thead><tbody>
+    ${data.apps.map(a => `<tr><td><strong>${esc(a.student_name)}</strong><br><small style="color:var(--muted)">${esc(a.student_email)}</small></td><td>${esc(a.college_name)}</td><td>${esc(a.course)}</td><td>${fdate(a.created_at)}</td>
+    <td><select class="inline" id="st${a.id}">${APP_ST.map(x => `<option ${x === a.status ? 'selected' : ''}>${x}</option>`).join('')}</select></td>
+    <td><input class="inline" style="border:1.5px solid var(--line);border-radius:10px;padding:7px 10px;width:170px" id="nt${a.id}" value="${esc(a.admin_note)}" placeholder="Add note"></td>
+    <td><button class="btn btn-navy btn-sm" onclick="saveApp(${a.id})">Save</button></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No applications yet.</div>'}</div>`;
+  },
+  consultations() {
+    return `<h2>Counselling sessions</h2><p class="dash-sub">Confirm, complete or cancel booked sessions.</p><div class="panel">
+    ${data.cons.length ? `<div class="table-wrap"><table><thead><tr><th>Name</th><th>Contact</th><th>Topic</th><th>When</th><th>Mode</th><th>Status</th></tr></thead><tbody>
+    ${data.cons.map(c => `<tr><td><strong>${esc(c.name)}</strong></td><td>${esc(c.email)}<br><small style="color:var(--muted)">${esc(c.phone)}</small></td><td>${esc(c.topic)}${c.message ? `<br><small style="color:var(--muted)">${esc(c.message)}</small>` : ''}</td><td>${fdate(c.date)}<br><small>${esc(c.slot)}</small></td><td>${esc(c.mode)}</td>
+    <td><select class="inline" onchange="saveCon(${c.id}, this.value)">${CON_ST.map(x => `<option ${x === c.status ? 'selected' : ''}>${x}</option>`).join('')}</select></td></tr>`).join('')}</tbody></table></div>` : '<div class="empty">No sessions yet.</div>'}</div>`;
+  },
+  colleges() {
+    return `<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap"><div><h2>Colleges</h2><p class="dash-sub">Add, edit or remove institutions from the directory.</p></div><button class="btn btn-gold" onclick="collegeForm()">+ Add college</button></div><div class="panel">
+    <h3>${data.colleges.length} institutions <button class="btn btn-gold btn-sm" onclick="collegeForm()">+ Add college</button></h3>
+    <div class="table-wrap"><table><thead><tr><th>Name</th><th>Location</th><th>Type</th><th>Fees</th><th>Rating</th><th>Featured</th><th></th></tr></thead><tbody>
+    ${data.colleges.map(c => `<tr><td><strong>${esc(c.name)}</strong></td><td>${esc(c.city)}, ${esc(c.state)}</td><td>${esc(c.type)}</td><td>${money(c.fees)}</td><td>★ ${c.rating}</td><td>${c.featured ? '⭐' : '—'}</td>
+    <td class="actions"><button class="btn btn-outline btn-sm" onclick="collegeForm(${c.id})">Edit</button><button class="btn btn-danger btn-sm" onclick="delCollege(${c.id})">Delete</button></td></tr>`).join('')}</tbody></table></div></div>`;
+  },
+  students() {
+    return `<h2>Students</h2><p class="dash-sub">Registered users on the platform.</p><div class="panel"><div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Qualification</th><th>%</th><th>Apps</th><th>Joined</th></tr></thead><tbody>
+    ${data.users.filter(u => u.role === 'student').map(u => `<tr><td><strong>${esc(u.name)}</strong></td><td>${esc(u.email)}</td><td>${esc(u.phone) || '—'}</td><td>${esc(u.qualification) || '—'}</td><td>${u.percentage || '—'}</td><td>${u.applications}</td><td>${fdate(u.created_at)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  },
+  inquiries() {
+    return `<h2>Inquiries</h2><p class="dash-sub">Messages from the contact form.</p><div class="panel">
+    ${data.inq.length ? data.inq.map(i => `<div style="padding:16px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px"><div><strong>${esc(i.name)}</strong> <span style="color:var(--muted)">· ${esc(i.email)} · ${fdate(i.created_at)}</span><p style="margin-top:6px">${esc(i.message)}</p></div><button class="btn btn-danger btn-sm" style="align-self:flex-start" onclick="delInq(${i.id})">Delete</button></div>`).join('') : '<div class="empty"><div class="big">📭</div>No inquiries yet.</div>'}</div>`;
+  }
+};
+
+async function saveApp(id) {
+  try { await api('/applications/' + id, { method: 'PUT', body: { status: $('st' + id).value, admin_note: $('nt' + id).value } }); toast('Application updated.', 'success'); await load(); }
+  catch (e) { toast(e.message, 'error'); }
+}
+async function saveCon(id, status) {
+  try { await api('/consultations/' + id, { method: 'PUT', body: { status } }); toast('Session ' + status.toLowerCase() + '.', 'success'); await load(); }
+  catch (e) { toast(e.message, 'error'); }
+}
+async function delCollege(id) {
+  if (!confirm('Delete this college and its applications?')) return;
+  try { await api('/colleges/' + id, { method: 'DELETE' }); toast('College deleted.'); await load(); } catch (e) { toast(e.message, 'error'); }
+}
+async function delInq(id) {
+  try { await api('/inquiries/' + id, { method: 'DELETE' }); await load(); } catch (e) { toast(e.message, 'error'); }
+}
+function collegeForm(id) {
+  const c = id ? data.colleges.find(x => x.id === id) : { name: '', city: '', state: '', type: '', courses: '', fees: '', rating: 4.2, established: 2000, seats: 100, deadline: '', min_percentage: 60, description: '', highlights: '', featured: 0 };
+  const f = (k, label, type = 'text') => `<div class="field"><label>${label}</label><input id="cf_${k}" type="${type}" value="${esc(c[k])}"></div>`;
+  openModal(`<h3>${id ? 'Edit' : 'Add'} college</h3><form class="form" id="cform">
+    ${f('name', 'Name *')}
+    <div class="row">${f('city', 'City *')}${f('state', 'State *')}</div>
+    <div class="row"><div class="field"><label>Stream / type *</label><input id="cf_type" list="typeList" value="${esc(c.type)}" placeholder="Engineering, Medical…"><datalist id="typeList">${[...new Set(['Engineering','Management','Medical','Arts & Science','Law','Design','Pharmacy','Hospitality','Agriculture',...data.colleges.map(x=>x.type)])].map(t=>`<option value="${esc(t)}">`).join('')}</datalist></div>${f('fees', 'Annual fees (₹)', 'number')}</div>
+    ${f('courses', 'Courses * (comma separated)')}
+    <div class="row">${f('rating', 'Rating', 'number')}${f('established', 'Established', 'number')}</div>
+    <div class="row">${f('seats', 'Seats', 'number')}${f('min_percentage', 'Min. %', 'number')}</div>
+    ${f('deadline', 'Application deadline', 'date')}
+    <div class="field"><label>Description</label><textarea id="cf_description">${esc(c.description)}</textarea></div>
+    ${f('highlights', 'Highlights (comma separated)')}
+    <label style="display:flex;gap:8px;align-items:center;font-weight:500"><input type="checkbox" id="cf_featured" ${c.featured ? 'checked' : ''}> Featured on homepage</label>
+    <div class="modal-actions"><button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button><button class="btn btn-gold">Save</button></div></form>`);
+  $('cform').addEventListener('submit', async e => {
+    e.preventDefault();
+    const body = {};
+    ['name', 'city', 'state', 'type', 'courses', 'fees', 'rating', 'established', 'seats', 'deadline', 'min_percentage', 'description', 'highlights'].forEach(k => body[k] = $('cf_' + k).value);
+    body.featured = $('cf_featured').checked;
+    try { await api(id ? '/colleges/' + id : '/colleges', { method: id ? 'PUT' : 'POST', body }); closeModal(); toast(id ? 'College updated.' : 'College added — it is now live on the site.', 'success'); current = 'colleges'; await load(); }
+    catch (err) { toast(err.message, 'error'); }
+  });
+}
+
+function render() {
+  document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.dataset.v === current));
+  $('main').innerHTML = views[current]();
+}
+async function load() {
+  const [stats, apps, cons, colleges, users, inq] = await Promise.all([api('/stats/admin'), api('/applications'), api('/consultations'), api('/colleges'), api('/users'), api('/inquiries')]);
+  data = { stats, apps, cons, colleges, users, inq };
+  render();
+}
+document.querySelectorAll('.side-link').forEach(b => b.addEventListener('click', () => { current = b.dataset.v; render(); }));
+if (me) load().catch(e => { toast(e.message, 'error'); Auth.clear(); setTimeout(() => location.href = '/login.html', 1200); });
+</script>
+</body>
+</html>

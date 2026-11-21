@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Educonsult — Educational Consultancy & College Admission Management</title>
+<meta name="description" content="Find the right college, get expert counselling and manage your admission applications in one place.">
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+
+<header class="hero">
+  <div class="container hero-grid">
+    <div>
+      <span class="eyebrow" style="color:var(--gold-2)">Admissions 2027 are open</span>
+      <h1>Your dream college deserves a <em>smarter</em> admission strategy.</h1>
+      <p class="lead">Explore top institutions, talk to certified counsellors and track every application — all from one elegant dashboard.</p>
+      <div class="hero-actions">
+        <a class="btn btn-gold" href="/book.html">Book free counselling →</a>
+        <a class="btn btn-ghost-light" href="/colleges.html">Explore colleges</a>
+      </div>
+      <div class="hero-trust">
+        <div><strong id="s-col">12+</strong><span>Partner colleges</span></div>
+        <div><strong id="s-stu">1k+</strong><span>Students guided</span></div>
+        <div><strong id="s-adm">98%</strong><span>Satisfaction rate</span></div>
+      </div>
+    </div>
+    <div style="position:relative">
+      <div class="float-chip c1">🎯 Personalised shortlist</div>
+      <div class="hero-card">
+        <h3>Find your perfect college</h3>
+        <p>Search by course, city or institution.</p>
+        <form class="search-box" id="quickSearch">
+          <input id="qs" placeholder="e.g. B.Tech CSE, MBA, Chennai…">
+          <select id="qt"><option value="">All streams</option></select>
+          <button class="btn btn-gold" type="submit">Search colleges</button>
+        </form>
+      </div>
+      <div class="float-chip c2">✅ Free expert advice</div>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head center reveal"><span class="eyebrow">What we do</span><h2>Everything you need, from first search to final seat</h2><p>A complete admission management platform backed by human expertise.</p></div>
+    <div class="grid grid-3">
+      <div class="card reveal"><div class="icon-badge">🧭</div><h3>Career Counselling</h3><p>One-on-one sessions to map your strengths and interests to the right stream and course.</p></div>
+      <div class="card reveal"><div class="icon-badge">🏛️</div><h3>College Shortlisting</h3><p>Compare fees, ratings, eligibility and deadlines across verified institutions at a glance.</p></div>
+      <div class="card reveal"><div class="icon-badge">📝</div><h3>Application Management</h3><p>Apply to multiple colleges and track every status change live from your dashboard.</p></div>
+      <div class="card reveal"><div class="icon-badge">📅</div><h3>Easy Slot Booking</h3><p>Pick a date and time that suits you — online or in-person — and get instant confirmation.</p></div>
+      <div class="card reveal"><div class="icon-badge">💰</div><h3>Scholarship Guidance</h3><p>Discover merit and need-based scholarships and learn how to apply for them.</p></div>
+      <div class="card reveal"><div class="icon-badge">🔒</div><h3>Secure & Private</h3><p>Your profile and application data is protected with encrypted passwords and secure sessions.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <div class="section-head reveal" style="display:flex;justify-content:space-between;align-items:flex-end;max-width:none;flex-wrap:wrap;gap:16px">
+      <div style="max-width:620px"><span class="eyebrow">Featured institutions</span><h2>Top colleges chosen by our experts</h2></div>
+      <a class="btn btn-outline" href="/colleges.html">View all colleges</a>
+    </div>
+    <div class="grid grid-3" id="featured"><div class="loading"><span class="spinner"></span></div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head center reveal"><span class="eyebrow">How it works</span><h2>Four simple steps to your admission</h2></div>
+    <div class="steps">
+      <div class="step reveal"><h3>Create your profile</h3><p>Sign up and share your academic background and goals.</p></div>
+      <div class="step reveal"><h3>Talk to a counsellor</h3><p>Book a free session and get a tailored shortlist.</p></div>
+      <div class="step reveal"><h3>Apply with confidence</h3><p>Submit applications to your chosen colleges in a few clicks.</p></div>
+      <div class="step reveal"><h3>Track & get admitted</h3><p>Follow every update until your seat is confirmed.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <div class="section-head center reveal"><span class="eyebrow">Success stories</span><h2>Students who found their fit</h2></div>
+    <div class="grid grid-3">
+      <div class="card quote reveal"><p>I was confused between CSE and Data Science. My counsellor compared both paths clearly and I now study AI at my first-choice college.</p><div class="who"><div class="avatar">PR</div><div><strong>Priya Raman</strong><span>B.Tech AI & ML</span></div></div></div>
+      <div class="card quote reveal"><p>Tracking all my applications in one dashboard saved me so much stress. I knew exactly which documents were pending.</p><div class="who"><div class="avatar">KS</div><div><strong>Karthik S.</strong><span>MBA, Crestwood</span></div></div></div>
+      <div class="card quote reveal"><p>Our family needed scholarship guidance and Educonsult delivered. We saved a significant part of the fees.</p><div class="who"><div class="avatar">MN</div><div><strong>Meera Nair</strong><span>Parent, B.Pharm student</span></div></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-bottom:0">
+  <div class="container">
+    <div class="cta reveal">
+      <div><h2>Ready to take the first step towards your future?</h2><p>Book a free 30-minute counselling session today.</p></div>
+      <a class="btn btn-gold" href="/book.html">Book my free session</a>
+    </div>
+  </div>
+</section>
+
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+(async () => {
+  try {
+    const [meta, feat, st] = await Promise.all([api('/colleges/meta'), api('/colleges?featured=1'), api('/stats/public')]);
+    document.getElementById('qt').innerHTML += meta.types.map(t => `<option>${esc(t)}</option>`).join('');
+    document.getElementById('featured').innerHTML = feat.slice(0, 6).map(collegeCard).join('');
+    document.getElementById('s-col').textContent = st.colleges + '+';
+    document.getElementById('s-stu').textContent = Math.max(st.students, 1000) + '+';
+    document.getElementById('s-adm').textContent = '98%';
+  } catch (e) { document.getElementById('featured').innerHTML = '<div class="empty">Could not load colleges.</div>'; }
+})();
+document.getElementById('quickSearch').addEventListener('submit', e => {
+  e.preventDefault();
+  const q = encodeURIComponent(document.getElementById('qs').value.trim()), t = encodeURIComponent(document.getElementById('qt').value);
+  location.href = `/colleges.html?q=${q}&type=${t}`;
+});
+</script>
+</body>
+</html>

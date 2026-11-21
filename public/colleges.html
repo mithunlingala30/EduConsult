@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explore Colleges — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<header class="page-head"><div class="container"><span class="eyebrow" style="color:var(--gold-2)">College directory</span><h1>Find the college that fits you</h1><p>Filter by stream, state and budget. Compare fees, ratings and eligibility instantly.</p></div></header>
+
+<div class="container">
+  <div class="filter-bar">
+    <input id="q" placeholder="Search college, course or city…">
+    <select id="type"><option value="">All streams</option></select>
+    <select id="state"><option value="">All states</option></select>
+    <select id="maxFees">
+      <option value="">Any budget</option><option value="100000">Up to ₹1 Lakh</option><option value="200000">Up to ₹2 Lakh</option>
+      <option value="300000">Up to ₹3 Lakh</option><option value="600000">Up to ₹6 Lakh</option>
+    </select>
+    <select id="sort">
+      <option value="">Recommended</option><option value="rating">Top rated</option><option value="fees_low">Fees: low to high</option>
+      <option value="fees_high">Fees: high to low</option><option value="name">Name A–Z</option>
+    </select>
+  </div>
+
+  <div class="result-meta"><span id="count"></span><button class="btn btn-outline btn-sm" id="reset">Reset filters</button></div>
+  <div class="grid grid-3" id="list"><div class="loading"><span class="spinner"></span></div></div>
+</div>
+
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(location.search);
+let timer;
+
+async function load() {
+  const qs = new URLSearchParams();
+  ['q', 'type', 'state', 'maxFees', 'sort'].forEach(k => { if ($(k).value) qs.set(k, $(k).value); });
+  try {
+    const rows = await api('/colleges?' + qs);
+    $('count').textContent = `${rows.length} college${rows.length === 1 ? '' : 's'} found`;
+    $('list').innerHTML = rows.length ? rows.map(collegeCard).join('')
+      : '<div class="empty" style="grid-column:1/-1"><div class="big">🔎</div>No colleges match your filters. Try widening your search.</div>';
+  } catch (e) { toast(e.message, 'error'); }
+}
+
+(async () => {
+  const meta = await api('/colleges/meta');
+  $('type').innerHTML += meta.types.map(t => `<option>${esc(t)}</option>`).join('');
+  $('state').innerHTML += meta.states.map(t => `<option>${esc(t)}</option>`).join('');
+  ['q', 'type', 'state', 'maxFees', 'sort'].forEach(k => { if (params.get(k)) $(k).value = params.get(k); });
+  load();
+})();
+$('q').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 300); });
+['type', 'state', 'maxFees', 'sort'].forEach(k => $(k).addEventListener('change', load));
+$('reset').addEventListener('click', () => { ['q', 'type', 'state', 'maxFees', 'sort'].forEach(k => $(k).value = ''); load(); });
+</script>
+</body>
+</html>

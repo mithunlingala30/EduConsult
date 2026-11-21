@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>College Details — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div id="hero"></div>
+<div class="container" style="margin-top:40px"><div class="detail-grid" id="body"><div class="loading"><span class="spinner"></span></div></div></div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+const id = new URLSearchParams(location.search).get('id');
+let college;
+
+(async () => {
+  try {
+    college = await api('/colleges/' + id);
+  } catch (e) {
+    document.getElementById('body').innerHTML = '<div class="empty" style="grid-column:1/-1"><div class="big">😕</div>College not found. <a href="/colleges.html" style="color:var(--gold);font-weight:600">Browse all colleges</a></div>';
+    return;
+  }
+  const c = college, [bg, emoji] = typeStyle(c.type);
+  document.title = c.name + ' — Educonsult';
+  document.getElementById('hero').innerHTML = `
+    <header class="page-head" style="background:${bg}">
+      <div class="container">
+        <span class="eyebrow" style="color:#fff;opacity:.85">${emoji} ${esc(c.type)}</span>
+        <h1>${esc(c.name)}</h1>
+        <p>📍 ${esc(c.city)}, ${esc(c.state)} &nbsp;·&nbsp; ★ ${c.rating.toFixed(1)} rating &nbsp;·&nbsp; Established ${c.established}</p>
+      </div></header>`;
+
+  document.getElementById('body').innerHTML = `
+    <div>
+      <div class="panel"><h3>About the institution</h3><p style="color:var(--muted)">${esc(c.description)}</p>
+        <div class="facts">
+          <div class="fact"><span>Annual fees</span><strong>${money(c.fees)}</strong></div>
+          <div class="fact"><span>Total seats</span><strong>${c.seats}</strong></div>
+          <div class="fact"><span>Min. eligibility</span><strong>${c.min_percentage}%</strong></div>
+          <div class="fact"><span>Apply before</span><strong>${fdate(c.deadline)}</strong></div>
+        </div></div>
+      <div class="panel"><h3>Courses offered</h3><div class="chips">${c.courses.split(',').map(x => `<span class="chip" style="font-size:.85rem;padding:7px 14px">${esc(x)}</span>`).join('')}</div></div>
+      <div class="panel"><h3>Highlights</h3><ul class="check-list">${c.highlights.split(',').filter(Boolean).map(h => `<li>${esc(h)}</li>`).join('')}</ul></div>
+    </div>
+    <aside class="panel side-card">
+      <h3>Apply to this college</h3>
+      <div class="form" id="applyForm">
+        <div class="field"><label>Choose course</label><select id="course">${c.courses.split(',').map(x => `<option>${esc(x)}</option>`).join('')}</select></div>
+        <div class="field"><label>Statement of purpose (optional)</label><textarea id="sop" placeholder="Why do you want to join this course?"></textarea></div>
+        <button class="btn btn-gold" id="applyBtn">Submit application</button>
+        <a class="btn btn-outline" href="/book.html">Talk to a counsellor first</a>
+      </div>
+    </aside>`;
+
+  document.getElementById('applyBtn').addEventListener('click', async e => {
+    const u = Auth.user;
+    if (!u) { toast('Please log in to apply.'); setTimeout(() => location.href = '/login.html', 900); return; }
+    if (u.role === 'admin') return toast('Admins cannot submit applications.', 'error');
+    e.target.disabled = true;
+    try {
+      await api('/applications', { method: 'POST', body: { college_id: c.id, course: document.getElementById('course').value, statement: document.getElementById('sop').value } });
+      toast('Application submitted! Track it in your dashboard.', 'success');
+      setTimeout(() => location.href = '/dashboard.html', 1200);
+    } catch (err) { toast(err.message, 'error'); e.target.disabled = false; }
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="auth-wrap">
+  <div class="auth-side">
+    <span class="eyebrow" style="color:var(--gold-2)">Welcome</span>
+    <h2>Your admission journey starts here.</h2>
+    <p>Create a free account to apply to colleges, book counselling and follow every update.</p>
+    <ul><li>Apply to multiple colleges with one profile</li><li>Real-time application tracking</li><li>Book and manage counselling sessions</li></ul>
+  </div>
+  <div class="auth-form">
+    <div class="auth-box">
+      <div class="tabs"><button class="tab active" data-t="login">Log in</button><button class="tab" data-t="register">Sign up</button></div>
+
+      <form class="form" id="loginForm">
+        <div class="field"><label>Email</label><input id="lemail" type="email" required></div>
+        <div class="field"><label>Password</label><input id="lpass" type="password" required></div>
+        <button class="btn btn-navy">Log in</button>
+        <div class="demo-note"><strong>Demo accounts</strong><br>Student: student@educonsult.com / student123<br>Admin: admin@educonsult.com / admin123</div>
+      </form>
+
+      <form class="form" id="regForm" style="display:none">
+        <div class="field"><label>Full name</label><input id="rname" required></div>
+        <div class="row">
+          <div class="field"><label>Email</label><input id="remail" type="email" required></div>
+          <div class="field"><label>Phone</label><input id="rphone"></div>
+        </div>
+        <div class="field"><label>Password (min 6 characters)</label><input id="rpass" type="password" minlength="6" required></div>
+        <button class="btn btn-gold">Create account</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script src="/js/app.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function show(t) {
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.t === t));
+  $('loginForm').style.display = t === 'login' ? 'grid' : 'none';
+  $('regForm').style.display = t === 'register' ? 'grid' : 'none';
+}
+document.querySelectorAll('.tab').forEach(b => b.addEventListener('click', () => show(b.dataset.t)));
+if (new URLSearchParams(location.search).get('tab') === 'register') show('register');
+
+function done(r) {
+  Auth.set(r.token, r.user);
+  location.href = r.user.role === 'admin' ? '/admin.html' : '/dashboard.html';
+}
+$('loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { done(await api('/auth/login', { method: 'POST', body: { email: $('lemail').value, password: $('lpass').value } })); }
+  catch (err) { toast(err.message, 'error'); }
+});
+$('regForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  try { done(await api('/auth/register', { method: 'POST', body: { name: $('rname').value, email: $('remail').value, phone: $('rphone').value, password: $('rpass').value } })); }
+  catch (err) { toast(err.message, 'error'); }
+});
+</script>
+</body>
+</html>

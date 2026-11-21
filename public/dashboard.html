@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Dashboard — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<div class="dash">
+  <aside class="sidebar">
+    <div class="me"><strong id="meName"></strong><span id="meEmail"></span></div>
+    <button class="side-link active" data-v="overview">🏠 Overview</button>
+    <button class="side-link" data-v="applications">📝 My applications</button>
+    <button class="side-link" data-v="consultations">📅 Counselling</button>
+    <button class="side-link" data-v="profile">👤 My profile</button>
+  </aside>
+  <main class="dash-main" id="main"></main>
+</div>
+<script src="/js/app.js"></script>
+<script>
+const me = requireAuth('student');
+const $ = id => document.getElementById(id);
+let apps = [], consults = [], profile = {};
+$('meName').textContent = me.name; $('meEmail').textContent = me.email;
+
+const views = {
+  overview() {
+    const admitted = apps.filter(a => a.status === 'Admitted').length;
+    const active = apps.filter(a => !['Admitted', 'Rejected'].includes(a.status)).length;
+    const upcoming = consults.filter(c => ['Pending', 'Confirmed'].includes(c.status)).length;
+    return `<h2>Welcome back, ${esc(profile.name.split(' ')[0])} 👋</h2><p class="dash-sub">Here's where your admission journey stands today.</p>
+    <div class="stats">
+      <div class="stat"><span>Applications</span><strong>${apps.length}</strong></div>
+      <div class="stat"><span>In progress</span><strong>${active}</strong></div>
+      <div class="stat"><span>Admitted</span><strong>${admitted}</strong></div>
+      <div class="stat"><span>Sessions booked</span><strong>${upcoming}</strong></div>
+    </div>
+    <div class="panel"><h3>Recent applications <a class="btn btn-gold btn-sm" href="/colleges.html">Apply to more</a></h3>${appTable(apps.slice(0, 4), false)}</div>
+    <div class="panel"><h3>Next counselling <a class="btn btn-outline btn-sm" href="/book.html">Book session</a></h3>${consultTable(consults.slice(0, 3))}</div>`;
+  },
+  applications() {
+    return `<h2>My applications</h2><p class="dash-sub">Track the status of every college you have applied to.</p>
+    <div class="panel">${appTable(apps, true)}</div>`;
+  },
+  consultations() {
+    return `<h2>Counselling sessions</h2><p class="dash-sub">Your booked and past sessions.</p>
+    <div class="panel"><h3>All sessions <a class="btn btn-gold btn-sm" href="/book.html">Book new</a></h3>${consultTable(consults, true)}</div>`;
+  },
+  profile() {
+    const p = profile;
+    return `<h2>My profile</h2><p class="dash-sub">Keep your academic details up to date so counsellors can help you better.</p>
+    <div class="panel"><form class="form" id="pf" style="max-width:640px">
+      <div class="row"><div class="field"><label>Full name</label><input id="pname" value="${esc(p.name)}" required></div>
+      <div class="field"><label>Email</label><input value="${esc(p.email)}" disabled></div></div>
+      <div class="row"><div class="field"><label>Phone</label><input id="pphone" value="${esc(p.phone)}"></div>
+      <div class="field"><label>Qualification</label><input id="pqual" value="${esc(p.qualification)}" placeholder="e.g. 12th – Science"></div></div>
+      <div class="row"><div class="field"><label>Percentage / CGPA %</label><input id="ppct" type="number" min="0" max="100" step="0.1" value="${p.percentage || ''}"></div>
+      <div class="field"><label>Area of interest</label><input id="pint" value="${esc(p.interest)}" placeholder="e.g. Engineering"></div></div>
+      <button class="btn btn-navy" style="justify-self:start">Save changes</button></form></div>`;
+  }
+};
+
+function appTable(rows, manage) {
+  if (!rows.length) return '<div class="empty"><div class="big">📭</div>No applications yet. <a href="/colleges.html" style="color:var(--gold);font-weight:600">Explore colleges</a></div>';
+  return `<div class="table-wrap"><table><thead><tr><th>College</th><th>Course</th><th>Applied</th><th>Status</th><th>Counsellor note</th>${manage ? '<th></th>' : ''}</tr></thead><tbody>
+  ${rows.map(a => `<tr><td><strong>${esc(a.college_name)}</strong><br><small style="color:var(--muted)">${esc(a.city)}, ${esc(a.state)}</small></td><td>${esc(a.course)}</td><td>${fdate(a.created_at)}</td><td>${statusBadge(a.status)}</td><td>${esc(a.admin_note) || '—'}</td>
+  ${manage ? `<td>${a.status === 'Submitted' ? `<button class="btn btn-danger btn-sm" onclick="withdraw(${a.id})">Withdraw</button>` : ''}</td>` : ''}</tr>`).join('')}</tbody></table></div>`;
+}
+function consultTable(rows, manage) {
+  if (!rows.length) return '<div class="empty"><div class="big">📅</div>No sessions booked yet.</div>';
+  return `<div class="table-wrap"><table><thead><tr><th>Topic</th><th>Date</th><th>Time</th><th>Mode</th><th>Status</th>${manage ? '<th></th>' : ''}</tr></thead><tbody>
+  ${rows.map(c => `<tr><td><strong>${esc(c.topic)}</strong></td><td>${fdate(c.date)}</td><td>${esc(c.slot)}</td><td>${esc(c.mode)}</td><td>${statusBadge(c.status)}</td>
+  ${manage ? `<td>${['Pending', 'Confirmed'].includes(c.status) ? `<button class="btn btn-danger btn-sm" onclick="cancelC(${c.id})">Cancel</button>` : ''}</td>` : ''}</tr>`).join('')}</tbody></table></div>`;
+}
+
+async function withdraw(id) {
+  if (!confirm('Withdraw this application?')) return;
+  try { await api('/applications/' + id, { method: 'DELETE' }); toast('Application withdrawn.'); await refresh(); } catch (e) { toast(e.message, 'error'); }
+}
+async function cancelC(id) {
+  if (!confirm('Cancel this session?')) return;
+  try { await api('/consultations/' + id, { method: 'PUT', body: { status: 'Cancelled' } }); toast('Session cancelled.'); await refresh(); } catch (e) { toast(e.message, 'error'); }
+}
+
+let current = 'overview';
+function render() {
+  document.querySelectorAll('.side-link').forEach(b => b.classList.toggle('active', b.dataset.v === current));
+  $('main').innerHTML = views[current]();
+  const pf = $('pf');
+  if (pf) pf.addEventListener('submit', async e => {
+    e.preventDefault();
+    try {
+      profile = await api('/me', { method: 'PUT', body: { name: $('pname').value, phone: $('pphone').value, qualification: $('pqual').value, percentage: $('ppct').value, interest: $('pint').value } });
+      Auth.set(Auth.token, profile); $('meName').textContent = profile.name; renderNav();
+      toast('Profile updated.', 'success');
+    } catch (err) { toast(err.message, 'error'); }
+  });
+}
+async function refresh() {
+  [apps, consults] = await Promise.all([api('/applications'), api('/consultations')]);
+  render();
+}
+document.querySelectorAll('.side-link').forEach(b => b.addEventListener('click', () => { current = b.dataset.v; render(); }));
+
+(async () => {
+  try { profile = await api('/me'); await refresh(); }
+  catch (e) { Auth.clear(); location.href = '/login.html'; }
+})();
+</script>
+</body>
+</html>

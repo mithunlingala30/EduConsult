@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Book Free Counselling — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<header class="page-head"><div class="container"><span class="eyebrow" style="color:var(--gold-2)">Free 30-minute session</span><h1>Book your counselling session</h1><p>Choose a topic, date and time slot. Our expert counsellors will reach out to confirm.</p></div></header>
+
+<div class="container" style="margin-top:-40px;position:relative;z-index:5">
+  <div class="grid" style="grid-template-columns:1.4fr 1fr;align-items:start" id="wrap">
+    <div class="form-card">
+      <form class="form" id="f">
+        <div class="row">
+          <div class="field"><label>Full name *</label><input id="name" required></div>
+          <div class="field"><label>Email *</label><input id="email" type="email" required></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Phone *</label><input id="phone" required></div>
+          <div class="field"><label>Topic *</label>
+            <select id="topic"><option>Course Selection</option><option>College Shortlisting</option><option>Admission Process</option><option>Scholarships & Loans</option><option>Study Abroad</option><option>Career Guidance</option></select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Preferred date *</label><input id="date" type="date" required></div>
+          <div class="field"><label>Mode</label><select id="mode"><option>Online</option><option>In-person</option><option>Phone call</option></select></div>
+        </div>
+        <div class="field"><label>Time slot *</label><div class="slots" id="slots"><span style="color:var(--muted);font-size:.9rem">Select a date to see available slots.</span></div></div>
+        <div class="field"><label>Anything we should know?</label><textarea id="message" placeholder="Your 12th stream, target course, budget…"></textarea></div>
+        <button class="btn btn-gold" id="btn">Confirm booking</button>
+      </form>
+    </div>
+    <div class="card">
+      <h3>What to expect</h3>
+      <ul class="check-list" style="margin-top:18px">
+        <li>A personalised discussion based on your marks and interests</li>
+        <li>A shortlist of 5–8 suitable colleges with fee comparison</li>
+        <li>Clear guidance on entrance exams and deadlines</li>
+        <li>Scholarship and education loan pointers</li>
+      </ul>
+      <p style="margin-top:22px;font-size:.9rem">Prefer to talk now? Call <strong>+91 90000 00000</strong> (Mon–Sat, 10am–6pm).</p>
+    </div>
+  </div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+let chosen = null;
+const tomorrow = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+$('date').min = tomorrow;
+
+const u = Auth.user;
+if (u) { $('name').value = u.name; $('email').value = u.email; $('phone').value = u.phone || ''; }
+if (window.innerWidth < 900) $('wrap').style.gridTemplateColumns = '1fr';
+
+$('date').addEventListener('change', async () => {
+  chosen = null;
+  if (!$('date').value) return;
+  $('slots').innerHTML = '<span class="spinner"></span>';
+  const slots = await api('/consultations/slots?date=' + $('date').value);
+  $('slots').innerHTML = slots.map(s => `<span class="slot ${s.available ? '' : 'disabled'}" data-s="${s.slot}">${s.slot}</span>`).join('');
+  document.querySelectorAll('.slot:not(.disabled)').forEach(el => el.addEventListener('click', () => {
+    document.querySelectorAll('.slot').forEach(x => x.classList.remove('active'));
+    el.classList.add('active'); chosen = el.dataset.s;
+  }));
+});
+
+$('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  if (!chosen) return toast('Please pick a time slot.', 'error');
+  $('btn').disabled = true;
+  try {
+    await api('/consultations', { method: 'POST', body: { name: $('name').value, email: $('email').value, phone: $('phone').value, topic: $('topic').value, date: $('date').value, slot: chosen, mode: $('mode').value, message: $('message').value } });
+    $('f').innerHTML = `<div class="empty"><div class="big">🎉</div><h3>You're booked!</h3><p style="margin:10px 0 22px">We'll confirm your session on <strong>${fdate($('date').value)}</strong> at <strong>${chosen}</strong> by email.</p><a class="btn btn-navy" href="${u ? '/dashboard.html' : '/'}">${u ? 'Go to dashboard' : 'Back to home'}</a></div>`;
+  } catch (err) { toast(err.message, 'error'); $('btn').disabled = false; $('date').dispatchEvent(new Event('change')); }
+});
+</script>
+</body>
+</html>

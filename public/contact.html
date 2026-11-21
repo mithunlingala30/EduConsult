@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Contact — Educonsult</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div id="nav"></div>
+<header class="page-head"><div class="container"><span class="eyebrow" style="color:var(--gold-2)">We'd love to hear from you</span><h1>Contact Educonsult</h1><p>Questions about admissions, fees or our services? Send us a message and we'll reply within one working day.</p></div></header>
+
+<div class="container" style="margin-top:-40px;position:relative;z-index:5">
+  <div class="grid grid-2" style="align-items:start">
+    <div class="form-card">
+      <form class="form" id="f">
+        <div class="field"><label>Your name</label><input id="name" required></div>
+        <div class="field"><label>Email</label><input id="email" type="email" required></div>
+        <div class="field"><label>Message</label><textarea id="message" required></textarea></div>
+        <button class="btn btn-gold">Send message</button>
+      </form>
+    </div>
+    <div class="grid">
+      <div class="card"><div class="icon-badge">📍</div><h3>Visit us</h3><p>Educonsult Centre, Anna Salai, Chennai, Tamil Nadu 600002</p></div>
+      <div class="card"><div class="icon-badge">📞</div><h3>Call us</h3><p>+91 90000 00000<br>Mon–Sat, 10am – 6pm IST</p></div>
+      <div class="card"><div class="icon-badge">✉️</div><h3>Email</h3><p>hello@educonsult.com</p></div>
+    </div>
+  </div>
+</div>
+<div id="footer"></div>
+<script src="/js/app.js"></script>
+<script>
+document.getElementById('f').addEventListener('submit', async e => {
+  e.preventDefault();
+  try {
+    await api('/inquiries', { method: 'POST', body: { name: name.value, email: email.value, message: message.value } });
+    toast('Message sent. We will get back to you soon!', 'success'); e.target.reset();
+  } catch (err) { toast(err.message, 'error'); }
+});
+</script>
+</body>
+</html>
